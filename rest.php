@@ -143,8 +143,9 @@ $phssApp->get('/hymn/number/{number}', function(Request $request, Response $resp
 
 $phssApp->get('/hymn/search/title/{word}', function(Request $request, Response $response) {
   $dbHymn = dbConnect();
-  $WORD = str_replace(' ','%',$request->getAttribute('word'));
+  $WORD = $request->getAttribute('word');
   $Q = "SELECT * FROM search_title('" . $WORD . "');";
+  error_log($Q);
   $Q = $dbHymn->prepare($Q);
   $R = $Q->execute();
   $Q = (array)$Q->fetchAll(PDO::FETCH_CLASS);
@@ -153,7 +154,7 @@ $phssApp->get('/hymn/search/title/{word}', function(Request $request, Response $
 
 $phssApp->get('/hymn/search/{word}', function(Request $request, Response $response) {
   $dbHymn = dbConnect();
-  $WORD = str_replace(' ','%',$request->getAttribute('word'));
+  $WORD = $request->getAttribute('word');
   $Q = "SELECT * FROM search_hymns('" . $WORD . "');";
   $Q = $dbHymn->prepare($Q);
   $R = $Q->execute();
