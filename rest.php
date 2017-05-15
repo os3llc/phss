@@ -2,8 +2,6 @@
 ini_set('memory_limit','4096M');
 ini_set('max_execution_time','300');
 date_default_timezone_set('America/New_York');
-require_once 'vendor/autoload.php';
-require_once 'include/config_setup.php';
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use PhpOffice\PhpPresentation\PhpPresentation;
@@ -18,7 +16,7 @@ use PhpOffice\PhpPresentation\Slide\Transition;
 use PhpOffice\PhpPresentation\DocumentLayout;
 
 function dbConnect() {
-  $myDB = new PDO($DB_STRING);
+  $myDB = new PDO('pgsql:host=127.0.0.1 user=phss dbname=phss');
   return $myDB;
 }
 
@@ -126,6 +124,7 @@ function isChorus($element) {
   return false;
 }
 
+require 'vendor/autoload.php';
 $phssApp = new \Slim\App;
 
 $phssApp->get('/hymn/number/{number}', function(Request $request, Response $response) {
@@ -218,6 +217,7 @@ $phssApp->get('/hymn/images/{n}[/{e}[/{i}]]', function($req, $resp, $args) {
 });
 
 $phssApp->get('/hymn/image/{n}/{e}/{i}/{s}', function($request, $response, $args) {
+  /*
   $dbHymn = dbConnect();
   $Q = "SELECT img FROM hymn_elements_img WHERE hymn= :hymn AND type= :type AND id= :id AND imgseq= :imgseq;";
   $Q = $dbHymn->prepare($Q);
@@ -226,6 +226,13 @@ $phssApp->get('/hymn/image/{n}/{e}/{i}/{s}', function($request, $response, $args
   $Q->bindColumn('img', $imgData, \PDO::PARAM_STR);
   $Q->fetch(\PDO::FETCH_BOUND);
   $response->write(pack('H*',$imgData));
+  */
+  readfile("trimmed/" . $args['n'] . "/" . $args['e'] . "_" . $args['i'] . "_" . $args['s'] . ".png");
+  return $response->withHeader('Content-Type', 'image/png');
+});
+
+$phssApp->get('/hymn/img/{n}/{e}/{i}/{s}', function($request, $response, $args) {
+  readfile("trimmed/" . $args['n'] . "/" . $args['e'] . "_" . $args['i'] . "_" . $args['s'] . ".png");
   return $response->withHeader('Content-Type', 'image/png');
 });
 
@@ -247,12 +254,14 @@ $phssApp->get('/hymn/presentation/{number}[/{layout}]', function($request, $resp
   $phssPres = new PhpPresentation();
   $phssPres->setLayout($phssLayout);
   $phssPres->removeSlideByIndex(0);
-  $Q = "SELECT type,id,imgseq,img FROM hymn_elements_img WHERE hymn= :hymn ORDER BY elseq,imgseq;";
+  $Q = "SELECT type,id,imgseq FROM hymn_elements_img WHERE hymn= :hymn ORDER BY elseq,imgseq;";
   $Q = $dbHymn->prepare($Q);
   $R = $Q->execute(array($args['number']));
   while($row = $Q->fetch(PDO::FETCH_ASSOC)) {
     $thisSlide = $phssPres->createSlide();
-    $thisImg = imagecreatefromstring(pack('H*',fgets($row['img'])));
+    // $thisImg = imagecreatefromstring(pack('H*',fgets($row['img'])));
+    $imgPath = "trimmed/" . $args['number'] . "/" . $row['type'] . "_" . $row['id'] . "_" . $row['imgseq'] . ".png";
+    $thisImg = imagecreatefrompng($imgPath);
     $thisShape = new Drawing\Gd();
     $thisShape->setName($args['number'] . " " . $row['type'] . " " . $row['id'] . " " . $row['imgseq'])
               ->setDescription('Sample')
@@ -283,12 +292,14 @@ $phssApp->get('/hymn/presentation/{number}/{layout}/elements/{elements:.*}', fun
   $elements = explode('/', $req->getAttribute('elements'));
   $phssPres = createPres($args['layout']);
   foreach($elements as $element) {
-    $Q = "SELECT img FROM hymn_elements_img WHERE hymn= :hymn AND elseq= :elseq ORDER BY imgseq;";
+    $Q = "SELECT * FROM hymn_elements_img WHERE hymn= :hymn AND elseq= :elseq ORDER BY imgseq;";
     $Q = $dbHymn->prepare($Q);
     $R = $Q->execute(array($args['number'],$element));
     while($imgrow = $Q->fetch(PDO::FETCH_ASSOC)) {
       $thisImg = null;
-      $thisImg = imagecreatefromstring(pack('H*',fgets($imgrow['img'])));
+      // $thisImg = imagecreatefromstring(pack('H*',fgets($imgrow['img'])));
+      $imgPath = "trimmed/" . $args['number'] . "/" . $imgrow['type'] . "_" . $imgrow['id'] . "_" . $imgrow['imgseq'] . ".png";
+      $thisImg = imagecreatefrompng($imgPath);
       addSlide($phssPres, $thisImg);
     }
   }
@@ -325,12 +336,14 @@ $phssApp->get('/hymns/presentation/{layout}/{title}/{song_elements:.*}', functio
     $R = $Q->fetch(PDO::FETCH_ASSOC);
     addTitleSlide($myPres, $R);
     foreach($elements as $element) {
-      $Q = "SELECT img FROM hymn_elements_img WHERE hymn= :hymn AND elseq= :elseq ORDER BY imgseq;";
+      $Q = "SELECT * FROM hymn_elements_img WHERE hymn= :hymn AND elseq= :elseq ORDER BY imgseq;";
       $Q = $dbHymn->prepare($Q);
       $R = $Q->execute(array($thisHymn,$element));
       while($imgrow = $Q->fetch(PDO::FETCH_ASSOC)) {
         $thisImg = null;
-        $thisImg = imagecreatefromstring(pack('H*',fgets($imgrow['img'])));
+        // $thisImg = imagecreatefromstring(pack('H*',fgets($imgrow['img'])));
+        $imgPath = "trimmed/" . $thisHymn . "/" . $imgrow['type'] . "_" . $imgrow['id'] . "_" . $imgrow['imgseq'] . ".png";
+        $thisImg = imagecreatefrompng($imgPath);
         addSlide($myPres, $thisImg);
       }
     }
@@ -369,7 +382,7 @@ $phssApp->get('/hymns/all/{sort}', function($req, $resp, $args) {
   $R = $Q->execute();
   $HYMNS = $Q->fetchAll(PDO::FETCH_CLASS);
   foreach($HYMNS as $hymn) {
-    $Q = "SELECT type, (upper(left(type,1)) || CAST(id as text)) as id, array_to_string(element,'/') AS element FROM hymn_elements WHERE hymn= :hymn ORDER BY id;";
+    $Q = "SELECT type, (upper(left(type,1)) || CAST(id as text)) as id, array_to_string(element,'/') AS element FROM hymn_elements WHERE hymn= :hymn ORDER BY elseq;";
     $Q = $dbHymn->prepare($Q);
     $R = $Q->execute(array($hymn->number));
     $Q = $Q->fetchAll(PDO::FETCH_CLASS);
@@ -380,11 +393,18 @@ $phssApp->get('/hymns/all/{sort}', function($req, $resp, $args) {
 });
 
 $phssApp->get('/hymns/topic/{id}', function($req, $resp, $args) {
-  $Q = "SELECT hymn_topics.hymn, hymns.title FROM hymn_topics INNER JOIN hymns ON hymn_topics.hymn = hymns.number WHERE hymn_topics.topic= :topic ORDER BY title;";
+  $Q = "SELECT * FROM v_hymns_author_composer INNER JOIN hymn_topics ON hymn_topics.hymn = v_hymns_author_composer.number WHERE hymn_topics.topic= :topic ORDER BY title;";
   $dbHymn = dbConnect();
   $Q = $dbHymn->prepare($Q);
   $R = $Q->execute(array($req->getAttribute("id")));
   $HYMNS = $Q->fetchAll(PDO::FETCH_CLASS);
+  foreach($HYMNS as $hymn) {
+    $Q = "SELECT type, (upper(left(type,1)) || CAST(id as text)) as id, array_to_string(element,'/') AS element FROM hymn_elements WHERE hymn= :hymn ORDER BY elseq;";
+    $Q = $dbHymn->prepare($Q);
+    $R = $Q->execute(array($hymn->number));
+    $Q = $Q->fetchAll(PDO::FETCH_CLASS);
+    $hymn->elements = $Q;
+  }
   echo json_encode((array)$HYMNS);
   return $resp->withHeader('Content-Type', 'application/json');
 });

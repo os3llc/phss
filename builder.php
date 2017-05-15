@@ -14,7 +14,11 @@
     <script src="js/vendor/jquery.js"></script>
     <script src="js/jquery.tablesorter.min.js"></script>
   </head>
-  <body>
+  <body text="#34282C">
+    <div>
+        <img src="img/tree_of_life.png" style="float:left;width:75px;border:5px solid white" />
+        <h1 style="color:#34282C">Psalms, Hymns & Spiritual Songs</h1>
+    <div>
     <ul class="accordion" data-accordion>
       <li id="songList" class="accordion-item is-active" data-accordion-item>
         <a href="#" class="accordion-title">Presentation Builder</a>
@@ -104,7 +108,30 @@
       <li id="songsByTopic" class="accordion-item" data-accordion-item>
         <a href="#" class="accordion-title">Songs by Topic</a>
         <div class="accordion-content" data-tab-content>
-          &nbsp;
+          <form>
+            <table>
+              <thead>
+                <tr>
+                  <select name="topicSelector" id="topicSelector" size=1>
+                  
+                  </select>
+                </tr>
+                <tr>
+                  <th>Hymn Number</th>
+                  <th>Title</th>
+                  <th>Author</th>
+                  <th>Composer</th>
+                  <th>Elements</th>
+                  <th>iTunes</th>
+                  <th>Google</th>
+                  <th>Amazon</th>
+                </tr>
+              </thead>
+              <tbody id="songTopicTable">
+
+              </tbody>
+            </table>
+          </form>
         </div>
       </li>
       <li id="songsByAuthor" class="accordion-item" data-accordion-item>
@@ -265,7 +292,7 @@
               myCode += "<li class=hymn_element draggable=true id=" + data[i]['hymn'] + "_" + data[i]['elseq'];
               myCode += " hymn=" + data[i]['hymn'] + " elseq=" + data[i]['elseq'] + ">";
               myCode += '<span data-tooltip aria-haspopup="true" class="has-tip" data-disable-hover="false" tabindex="1"';
-              myCode += ' title="' + data[i]['element'].replace(/\//g,'\n') + '">';
+              myCode += ' title="' + data[i]['element'].replace(/\//g,'\n').replace(/[\\"]/g, '&quot;') + '">';
               myCode += data[i]['type'].charAt(0) + data[i]['id'] + "</span>";
               myCode += '<input type=checkbox id=' + data[i]['hymn'] + '_' + data[i]['elseq'] + ' checked />';
               // myCode += ' <a href="#" id="link_' + data[i]['hymn'] + '_' + data[i]['elseq'] + '_' + i;
@@ -362,7 +389,7 @@
               $.each(item.elements, function(j, element) {
                 tableHtml += '<span data-tooltip aria-haspopup="true" class="has-tip element-tip" ';
                 tableHtml += 'data-disable-hover="false" tabindex="1"';
-                tableHtml += ' title="' + element.element.replace(/\//g,'\n') + '">';
+                tableHtml += ' title="' + element.element.replace(/\//g,'\n').replace(/[\\"]/g, '&quot;') + '">';
                 tableHtml += element.id + "</span>&nbsp;";
               });
               tableHtml += '</td><td>';
@@ -376,13 +403,6 @@
             $("#songTitleTable").append(tableHtml);
           });
         }
-      });
-
-      $("#songsByTopic > a").on("click", function() {
-        if($(this).parent().hasClass("is-active"))
-          console.log($(this).parent().attr('id') + " is open");
-        else
-          console.log($(this).parent().attr('id') + " is closed");
       });
 
       $("#songsByAuthor > a").on("click", function() {
@@ -403,7 +423,7 @@
               $.each(item.elements, function(j, element) {
                 tableHtml += '<span data-tooltip aria-haspopup="true" class="has-tip element-tip" ';
                 tableHtml += 'data-disable-hover="false" tabindex="1"';
-                tableHtml += ' title="' + element.element.replace(/\//g,'\n') + '">';
+                tableHtml += ' title="' + element.element.replace(/\//g,'\n').replace(/[\\"]/g, '&quot;') + '">';
                 tableHtml += element.id + "</span>&nbsp;";
               });
               tableHtml += '</td><td>';
@@ -437,7 +457,7 @@
               $.each(item.elements, function(j, element) {
                 tableHtml += '<span data-tooltip aria-haspopup="true" class="has-tip element-tip" ';
                 tableHtml += 'data-disable-hover="false" tabindex="1"';
-                tableHtml += ' title="' + element.element.replace(/\//g,'\n') + '">';
+                tableHtml += ' title="' + element.element.replace(/\//g,'\n').replace(/[\\"]/g, '&quot;') + '">';
                 tableHtml += element.id + "</span>&nbsp;";
               });
               tableHtml += '</td><td>';
@@ -451,6 +471,59 @@
             $("#songComposerTable").append(tableHtml);
           });
         }
+      });
+
+      $("#songsByTopic > a").on("click", function() {
+        if($(this).parent().hasClass("is-active")) {
+          $("#songTopicTable").empty();
+          $("#topicSelector").empty();
+          $("#topicSelector").append($('<option>', {
+            value: -1,
+            text: '--Select a Topic--'
+          }));
+          $.getJSON("/phss/topics/all", function(data) {
+            $.each(data, function(i, item) {
+              $("#topicSelector").append($('<option>', {
+                value: item.id,
+                text: item.topic
+              }));
+            });
+          });
+        }
+      });
+
+      $("#topicSelector").on('change', function() {
+        $("#songTopicTable").empty();
+        if($(this).val() < 1)
+          return;
+        $.getJSON("/phss/hymns/topic/" + $(this).val(), function(data) {
+          var tableHtml = '';
+          $.each(data, function(i, item) {
+            tableHtml += '<tr><td>';
+            tableHtml += item.hymn;
+            tableHtml += '</td><td>';
+            tableHtml += item.title;
+            tableHtml += '</td><td>';
+            tableHtml += item.author;
+            tableHtml += '</td><td>';
+            tableHtml += item.composer;
+            tableHtml += '</td><td>';
+            $.each(item.elements, function(j, element) {
+              tableHtml += '<span data-tooltip aria-haspopup="true" class="has-tip element-tip" ';
+              tableHtml += 'data-disable-hover="false" tabindex="1"';
+              tableHtml += ' title="' + element.element.replace(/\//g,'\n').replace(/[\\"]/g, '&quot;') + '">';
+              tableHtml += element.id + "</span>&nbsp;";
+            });
+            tableHtml += '</td><td>';
+            tableHtml += '&nbsp;';
+            tableHtml += '</td><td>';
+            tableHtml += '&nbsp;';
+            tableHtml += '</td><td>';
+            tableHtml += '&nbsp;';
+            tableHtml += '</td></tr>';
+          });
+          $("#songTopicTable").append(tableHtml);
+        });
       });
 
       $("#songsByNumber > a").on("click", function() {
@@ -471,7 +544,7 @@
               $.each(item.elements, function(j, element) {
                 tableHtml += '<span data-tooltip aria-haspopup="true" class="has-tip element-tip" ';
                 tableHtml += 'data-disable-hover="false" tabindex="1"';
-                tableHtml += ' title="' + element.element.replace(/\//g,'\n') + '">';
+                tableHtml += ' title="' + element.element.replace(/\//g,'\n').replace(/[\\"]/g, '&quot;') + '">';
                 tableHtml += element.id + "</span>&nbsp;";
               });
               tableHtml += '</td><td>';
