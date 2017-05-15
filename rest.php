@@ -2,6 +2,8 @@
 ini_set('memory_limit','4096M');
 ini_set('max_execution_time','300');
 date_default_timezone_set('America/New_York');
+require_once 'vendor/autoload.php';
+require_once 'include/config_setup.php';
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use PhpOffice\PhpPresentation\PhpPresentation;
@@ -16,7 +18,7 @@ use PhpOffice\PhpPresentation\Slide\Transition;
 use PhpOffice\PhpPresentation\DocumentLayout;
 
 function dbConnect() {
-  $myDB = new PDO('pgsql:host=127.0.0.1 user=phss dbname=phss');
+  $myDB = new PDO($DB_STRING);
   return $myDB;
 }
 
@@ -124,7 +126,6 @@ function isChorus($element) {
   return false;
 }
 
-require 'vendor/autoload.php';
 $phssApp = new \Slim\App;
 
 $phssApp->get('/hymn/number/{number}', function(Request $request, Response $response) {
