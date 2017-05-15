@@ -335,8 +335,11 @@ $phssApp->get('/hymns/presentation/{layout}/{title}/{song_elements:.*}', functio
     $Q = $dbHymn->prepare($Q);
     $R = $Q->execute(array($thisHymn));
     $R = $Q->fetch(PDO::FETCH_ASSOC);
-    addTitleSlide($myPres, $R);
     foreach($elements as $element) {
+      if($element == "t") {
+        addTitleSlide($myPres, $R);
+        continue;
+      }
       $Q = "SELECT * FROM hymn_elements_img WHERE hymn= :hymn AND elseq= :elseq ORDER BY imgseq;";
       $Q = $dbHymn->prepare($Q);
       $R = $Q->execute(array($thisHymn,$element));

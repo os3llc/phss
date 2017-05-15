@@ -198,6 +198,9 @@
         myCode += hymnTitle;
         myCode += ' <a href="#" onClick="removeElement(this);">X</a>';
         myCode += "<ul id=\"element_" + hymnNum + "\">";
+        myCode += "<li class=hymn_element draggable=false id=" + hymnNum + "_t hymn=" + hymnNum + ">";
+        myCode += '<span data-tooltip aria-haspopup="true" class="has-tip" data-disable-hover="false" tabindex="1" title="Title Slide">Title</span>';
+        myCode += "<input type=checkbox id=" + hymnNum + "_t checked /></li>";
         $.ajax({
           url: "/phss/hymn/elements/" + hymnNum,
           dataType: 'json',
@@ -230,8 +233,6 @@
               myCode += ' title="' + data[i]['element'].replace(/\//g,'\n').replace(/[\\"]/g, '&quot;') + '">';
               myCode += data[i]['type'].charAt(0) + data[i]['id'] + "</span>";
               myCode += '<input type=checkbox id=' + data[i]['hymn'] + '_' + data[i]['elseq'] + ' checked />';
-              // myCode += ' <a href="#" id="link_' + data[i]['hymn'] + '_' + data[i]['elseq'] + '_' + i;
-              // myCode += '" onClick="removeElement(this);">x</a>';
               myCode += "</li>";
             }
           }
