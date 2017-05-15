@@ -49,9 +49,9 @@ SET search_path = public, pg_catalog;
 
 CREATE FUNCTION search_hymns(s text) RETURNS TABLE(hymn integer, title character varying, line text)
     LANGUAGE sql
-    AS $$
-SELECT h.number, h.title, he.el FROM ( SELECT hymn,unnest(element) AS el FROM hymn_elements) he INNER JOIN hymns h ON h.number = he.hymn WHERE lower(el) LIKE lower('%' || s || '%') UNION SELECT hymns.number, hymns.title, '' AS el FROM hymns WHERE lower(title) LIKE lower('%' || s || '%') ORDER BY title;
-$$;
+    AS $_$
+SELECT h.number, h.title, he.el FROM ( SELECT hymn,unnest(element) AS el FROM hymn_elements) he INNER JOIN hymns h ON h.number = he.hymn WHERE lower(regexp_replace(el,'[.,\/#!$%\^&\*;:{}=\-_`~()]','')) LIKE lower('%' || regexp_replace(s,'[.,\/#!$%\^&\*;:{}=\-_`~()]','') || '%') UNION SELECT * FROM search_title(s);
+$_$;
 
 
 ALTER FUNCTION public.search_hymns(s text) OWNER TO phss;
@@ -62,12 +62,90 @@ ALTER FUNCTION public.search_hymns(s text) OWNER TO phss;
 
 CREATE FUNCTION search_title(s text) RETURNS TABLE(hymn integer, title character varying, line text)
     LANGUAGE sql
-    AS $$
-SELECT hymns.number, hymns.title, ''::text AS el FROM hymns WHERE lower(title) LIKE lower('%' || s || '%') ORDER BY title;
-$$;
+    AS $_$
+SELECT hymns.number, hymns.title, ''::text AS el FROM hymns WHERE lower(regexp_replace(title,'[.,\/#!$%\^&\*;:{}=\-_`~()]','')) LIKE lower('%' || regexp_replace(s,'[.,\/#!$%\^&\*;:{}=\-_`~()]','') || '%') ORDER BY title;
+$_$;
 
 
 ALTER FUNCTION public.search_title(s text) OWNER TO phss;
+
+--
+-- Name: english_stem_nostop; Type: TEXT SEARCH DICTIONARY; Schema: public; Owner: phss
+--
+
+CREATE TEXT SEARCH DICTIONARY english_stem_nostop (
+    TEMPLATE = pg_catalog.snowball,
+    language = 'english' );
+
+
+ALTER TEXT SEARCH DICTIONARY english_stem_nostop OWNER TO phss;
+
+--
+-- Name: english_nostop; Type: TEXT SEARCH CONFIGURATION; Schema: public; Owner: phss
+--
+
+CREATE TEXT SEARCH CONFIGURATION english_nostop (
+    PARSER = pg_catalog."default" );
+
+ALTER TEXT SEARCH CONFIGURATION english_nostop
+    ADD MAPPING FOR asciiword WITH english_stem_nostop;
+
+ALTER TEXT SEARCH CONFIGURATION english_nostop
+    ADD MAPPING FOR word WITH english_stem_nostop;
+
+ALTER TEXT SEARCH CONFIGURATION english_nostop
+    ADD MAPPING FOR numword WITH simple;
+
+ALTER TEXT SEARCH CONFIGURATION english_nostop
+    ADD MAPPING FOR email WITH simple;
+
+ALTER TEXT SEARCH CONFIGURATION english_nostop
+    ADD MAPPING FOR url WITH simple;
+
+ALTER TEXT SEARCH CONFIGURATION english_nostop
+    ADD MAPPING FOR host WITH simple;
+
+ALTER TEXT SEARCH CONFIGURATION english_nostop
+    ADD MAPPING FOR sfloat WITH simple;
+
+ALTER TEXT SEARCH CONFIGURATION english_nostop
+    ADD MAPPING FOR version WITH simple;
+
+ALTER TEXT SEARCH CONFIGURATION english_nostop
+    ADD MAPPING FOR hword_numpart WITH simple;
+
+ALTER TEXT SEARCH CONFIGURATION english_nostop
+    ADD MAPPING FOR hword_part WITH english_stem_nostop;
+
+ALTER TEXT SEARCH CONFIGURATION english_nostop
+    ADD MAPPING FOR hword_asciipart WITH english_stem_nostop;
+
+ALTER TEXT SEARCH CONFIGURATION english_nostop
+    ADD MAPPING FOR numhword WITH simple;
+
+ALTER TEXT SEARCH CONFIGURATION english_nostop
+    ADD MAPPING FOR asciihword WITH english_stem_nostop;
+
+ALTER TEXT SEARCH CONFIGURATION english_nostop
+    ADD MAPPING FOR hword WITH english_stem_nostop;
+
+ALTER TEXT SEARCH CONFIGURATION english_nostop
+    ADD MAPPING FOR url_path WITH simple;
+
+ALTER TEXT SEARCH CONFIGURATION english_nostop
+    ADD MAPPING FOR file WITH simple;
+
+ALTER TEXT SEARCH CONFIGURATION english_nostop
+    ADD MAPPING FOR "float" WITH simple;
+
+ALTER TEXT SEARCH CONFIGURATION english_nostop
+    ADD MAPPING FOR "int" WITH simple;
+
+ALTER TEXT SEARCH CONFIGURATION english_nostop
+    ADD MAPPING FOR uint WITH simple;
+
+
+ALTER TEXT SEARCH CONFIGURATION english_nostop OWNER TO phss;
 
 SET default_tablespace = '';
 
