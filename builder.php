@@ -11,15 +11,16 @@
     <link rel="stylesheet" href="css/foundation.css">
     <link rel="stylesheet" href="css/app.css">
     <link rel="stylesheet" href="css/phss.css">
+    <link rel="stylesheet" href="css/jquery.dataTables.min.css">
     <script src="js/vendor/jquery.js"></script>
-    <script src="js/jquery.tablesorter.min.js"></script>
+    <script src="js/jquery.dataTables.min.js"></script>
   </head>
   <body text="#34282C">
     <div>
         <img src="img/tree_of_life.png" style="float:left;width:75px;border:5px solid white" />
         <h1 style="color:#34282C">Psalms, Hymns & Spiritual Songs</h1>
     <div>
-    <ul class="accordion" data-accordion>
+    <ul class="accordion" data-accordion role="tablist" data-allow-all-closed="true">
       <li id="songList" class="accordion-item is-active" data-accordion-item>
         <a href="#" class="accordion-title">Presentation Builder</a>
         <div class="accordion-content" data-tab-content>
@@ -83,23 +84,23 @@
           </div>
         </div>
       </li>
-      <li id="songsByTitle" class="accordion-item" data-accordion-item>
-        <a id="openSongsByTitle" href="#" class="accordion-title">Songs by Title</a>
+      <li id="songListTab" class="accordion-item" data-accordion-item>
+        <a id="openSongListTab" href="#" class="accordion-title">List of Songs</a>
         <div class="accordion-content" data-tab-content>
-           <table>
+           <table id="songListTable" class="display">
              <thead>
                <tr>
                  <th>Hymn Number</th>
                  <th>Title</th>
-                 <th>Author</th>
-                 <th>Composer</th>
+                 <th>Author<br/>(Lyrics)</th>
+                 <th>Composer<br/>(Tune)</th>
                  <th>Elements</th>
                  <th>iTunes</th>
                  <th>Google</th>
                  <th>Amazon</th>
                </tr>
              </thead>
-             <tbody id="songTitleTable">
+             <tbody id="songListTableBody">
 
              </tbody>
            </table>
@@ -109,7 +110,7 @@
         <a href="#" class="accordion-title">Songs by Topic</a>
         <div class="accordion-content" data-tab-content>
           <form>
-            <table>
+            <table id="songTopicTable" class="display">
               <thead>
                 <tr>
                   <select name="topicSelector" id="topicSelector" size=1>
@@ -119,85 +120,19 @@
                 <tr>
                   <th>Hymn Number</th>
                   <th>Title</th>
-                  <th>Author</th>
-                  <th>Composer</th>
+                  <th>Author<br/>(Lyrics)</th>
+                  <th>Composer<br/>(Tune)</th>
                   <th>Elements</th>
                   <th>iTunes</th>
                   <th>Google</th>
                   <th>Amazon</th>
                 </tr>
               </thead>
-              <tbody id="songTopicTable">
+              <tbody id="songTopicTableBody">
 
               </tbody>
             </table>
           </form>
-        </div>
-      </li>
-      <li id="songsByAuthor" class="accordion-item" data-accordion-item>
-        <a href="#" class="accordion-title">Songs by Author</a>
-        <div class="accordion-content" data-tab-content>
-           <table>
-             <thead>
-               <tr>
-                 <th>Hymn Number</th>
-                 <th>Author</th>
-                 <th>Composer</th>
-                 <th>Title</th>
-                 <th>Elements</th>
-                 <th>iTunes</th>
-                 <th>Google</th>
-                 <th>Amazon</th>
-               </tr>
-             </thead>
-             <tbody id="songAuthorTable">
-
-             </tbody>
-           </table>
-        </div>
-      </li>
-      <li id="songsByComposer" class="accordion-item" data-accordion-item>
-        <a href="#" class="accordion-title">Songs by Composer</a>
-        <div class="accordion-content" data-tab-content>
-           <table>
-             <thead>
-               <tr>
-                 <th>Hymn Number</th>
-                 <th>Composer</th>
-                 <th>Author</th>
-                 <th>Title</th>
-                 <th>Elements</th>
-                 <th>iTunes</th>
-                 <th>Google</th>
-                 <th>Amazon</th>
-               </tr>
-             </thead>
-             <tbody id="songComposerTable">
-
-             </tbody>
-           </table>
-        </div>
-      </li>
-      <li id="songsByNumber" class="accordion-item" data-accordion-item>
-        <a href="#" class="accordion-title">Songs by Hymn Number</a>
-        <div class="accordion-content" data-tab-content>
-           <table>
-             <thead>
-               <tr>
-                 <th>Hymn Number</th>
-                 <th>Title</th>
-                 <th>Author</th>
-                 <th>Composer</th>
-                 <th>Elements</th>
-                 <th>iTunes</th>
-                 <th>Google</th>
-                 <th>Amazon</th>
-               </tr>
-             </thead>
-             <tbody id="songNumberTable">
-
-             </tbody>
-           </table>
         </div>
       </li>
     </ul>
@@ -371,9 +306,9 @@
         window.location.href = baseUrl;
       });
 
-      $("#songsByTitle > a").on("click", function() {
+      $("#songListTab > a").on("click", function() {
         if($(this).parent().hasClass("is-active")) {
-          $("#songTitleTable").empty();
+          $("#songListTableBody").empty();
           $.getJSON("/phss/hymns/all/title", function(data) {
             var tableHtml = '';
             $.each(data, function(i, item) {
@@ -400,82 +335,15 @@
               tableHtml += '&nbsp;';
               tableHtml += '</td></tr>';
             });
-            $("#songTitleTable").append(tableHtml);
-          });
-        }
-      });
-
-      $("#songsByAuthor > a").on("click", function() {
-        if($(this).parent().hasClass("is-active")) {
-          $("#songAuthorTable").empty();
-          $.getJSON("/phss/hymns/all/author", function(data) {
-            var tableHtml = '';
-            $.each(data, function(i, item) {
-              tableHtml += '<tr><td>';
-              tableHtml += item.number;
-              tableHtml += '</td><td>';
-              tableHtml += item.author;
-              tableHtml += '</td><td>';
-              tableHtml += item.composer;
-              tableHtml += '</td><td>';
-              tableHtml += item.title;
-              tableHtml += '</td><td>';
-              $.each(item.elements, function(j, element) {
-                tableHtml += '<span data-tooltip aria-haspopup="true" class="has-tip element-tip" ';
-                tableHtml += 'data-disable-hover="false" tabindex="1"';
-                tableHtml += ' title="' + element.element.replace(/\//g,'\n').replace(/[\\"]/g, '&quot;') + '">';
-                tableHtml += element.id + "</span>&nbsp;";
-              });
-              tableHtml += '</td><td>';
-              tableHtml += '&nbsp;';
-              tableHtml += '</td><td>';
-              tableHtml += '&nbsp;';
-              tableHtml += '</td><td>';
-              tableHtml += '&nbsp;';
-              tableHtml += '</td></tr>';
-            });
-            $("#songAuthorTable").append(tableHtml);
-          });
-        }
-      });
-
-      $("#songsByComposer > a").on("click", function() {
-        if($(this).parent().hasClass("is-active")) {
-          $("#songComposerTable").empty();
-          $.getJSON("/phss/hymns/all/composer", function(data) {
-            var tableHtml = '';
-            $.each(data, function(i, item) {
-              tableHtml += '<tr><td>';
-              tableHtml += item.number;
-              tableHtml += '</td><td>';
-              tableHtml += item.composer;
-              tableHtml += '</td><td>';
-              tableHtml += item.author;
-              tableHtml += '</td><td>';
-              tableHtml += item.title;
-              tableHtml += '</td><td>';
-              $.each(item.elements, function(j, element) {
-                tableHtml += '<span data-tooltip aria-haspopup="true" class="has-tip element-tip" ';
-                tableHtml += 'data-disable-hover="false" tabindex="1"';
-                tableHtml += ' title="' + element.element.replace(/\//g,'\n').replace(/[\\"]/g, '&quot;') + '">';
-                tableHtml += element.id + "</span>&nbsp;";
-              });
-              tableHtml += '</td><td>';
-              tableHtml += '&nbsp;';
-              tableHtml += '</td><td>';
-              tableHtml += '&nbsp;';
-              tableHtml += '</td><td>';
-              tableHtml += '&nbsp;';
-              tableHtml += '</td></tr>';
-            });
-            $("#songComposerTable").append(tableHtml);
+            $("#songListTableBody").append(tableHtml);
+            $("#songListTable").DataTable({"order": [[1, "asc" ]], "paging": false, "info": false });
           });
         }
       });
 
       $("#songsByTopic > a").on("click", function() {
         if($(this).parent().hasClass("is-active")) {
-          $("#songTopicTable").empty();
+          $("#songTopicTableBody").empty();
           $("#topicSelector").empty();
           $("#topicSelector").append($('<option>', {
             value: -1,
@@ -493,7 +361,7 @@
       });
 
       $("#topicSelector").on('change', function() {
-        $("#songTopicTable").empty();
+        $("#songTopicTableBody").empty();
         if($(this).val() < 1)
           return;
         $.getJSON("/phss/hymns/topic/" + $(this).val(), function(data) {
@@ -522,42 +390,9 @@
             tableHtml += '&nbsp;';
             tableHtml += '</td></tr>';
           });
-          $("#songTopicTable").append(tableHtml);
+          $("#songTopicTableBody").append(tableHtml);
+          $("#songTopicTable").DataTable({"order": [[1, "asc" ]], "paging": false, "info": false });
         });
-      });
-
-      $("#songsByNumber > a").on("click", function() {
-        if($(this).parent().hasClass("is-active")) {
-          $("#songNumberTable").empty();
-          $.getJSON("/phss/hymns/all/number", function(data) {
-            var tableHtml = '';
-            $.each(data, function(i, item) {
-              tableHtml += '<tr><td>';
-              tableHtml += item.number;
-              tableHtml += '</td><td>';
-              tableHtml += item.title;
-              tableHtml += '</td><td>';
-              tableHtml += item.author;
-              tableHtml += '</td><td>';
-              tableHtml += item.composer;
-              tableHtml += '</td><td>';
-              $.each(item.elements, function(j, element) {
-                tableHtml += '<span data-tooltip aria-haspopup="true" class="has-tip element-tip" ';
-                tableHtml += 'data-disable-hover="false" tabindex="1"';
-                tableHtml += ' title="' + element.element.replace(/\//g,'\n').replace(/[\\"]/g, '&quot;') + '">';
-                tableHtml += element.id + "</span>&nbsp;";
-              });
-              tableHtml += '</td><td>';
-              tableHtml += '&nbsp;';
-              tableHtml += '</td><td>';
-              tableHtml += '&nbsp;';
-              tableHtml += '</td><td>';
-              tableHtml += '&nbsp;';
-              tableHtml += '</td></tr>';
-            });
-            $("#songNumberTable").append(tableHtml);
-          });
-        }
       });
 
     </script>
